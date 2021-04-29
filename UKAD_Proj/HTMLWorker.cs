@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿
+using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using HtmlAgilityPack;
 
@@ -30,7 +32,7 @@ namespace UKAD_Proj
 
             var linkedPages = doc.DocumentNode.Descendants("a")
                 .Select(a => a.GetAttributeValue("href", null))
-                .Where(u => !string.IsNullOrEmpty(u) && u.StartsWith(_primaryUrl) && !_urls.Contains(u)).Distinct()
+                .Where(u => !string.IsNullOrEmpty(u) && url.Contains(WebRequest.Create(_primaryUrl).RequestUri.Host) && !_urls.Contains(u)).Distinct()
                 .ToList();
 
             _urls.AddRange(linkedPages.ToList());

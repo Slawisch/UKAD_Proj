@@ -18,12 +18,13 @@ namespace UKAD_Proj
 
             foreach (var item in urls)
             {
-                request = (HttpWebRequest)WebRequest.Create(item);
+                
                 timer.Reset();
                 timer.Start();
 
                 try
                 {
+                    request = (HttpWebRequest)WebRequest.Create(item);
                     HttpWebResponse response = (HttpWebResponse)request.GetResponse(); //EXCEPTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                     response.Close();
                     timer.Stop();
