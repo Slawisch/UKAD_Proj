@@ -32,8 +32,12 @@ namespace UKAD_Proj
 
             var linkedPages = doc.DocumentNode.Descendants("a")
                 .Select(a => a.GetAttributeValue("href", null))
+                .Union(doc.DocumentNode.Descendants("img")
+                        .Select(a => a.GetAttributeValue("src", null)))
                 .Where(u => !string.IsNullOrEmpty(u) && url.Contains(WebRequest.Create(_primaryUrl).RequestUri.Host) && !_urls.Contains(u)).Distinct()
                 .ToList();
+
+            //117
 
             _urls.AddRange(linkedPages.ToList());
 
@@ -42,6 +46,9 @@ namespace UKAD_Proj
                 PrintUrl?.Invoke(item);
                 GetUrls(item);
             }
+
+            _urls = _urls.Select(l =>
+                { if (l.StartsWith('/'))  l = _primaryUrl + l[1..]; return l; }).ToList();
 
             return _urls;
         }
