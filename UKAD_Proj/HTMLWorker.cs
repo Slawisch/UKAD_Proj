@@ -9,13 +9,16 @@ namespace UKAD_Proj
 {
     class HtmlWorker
     {
-        private static List<string> _urls = new();
+        private static readonly List<string> Urls = new();
         private static string _primaryUrl = string.Empty;
-        public delegate void HtmlHandler(string message);
-
-        public static event HtmlHandler PrintUrl;
 
         public static List<string> GetUrls(string url)
+        {
+            IterateUrls(url);
+            return Urls;
+        }
+
+        private static void IterateUrls(string url)
         {
             if (_primaryUrl == string.Empty) //If it's first method's call
                 _primaryUrl = url;
@@ -27,30 +30,21 @@ namespace UKAD_Proj
             }
             catch
             {
-                return new List<string>();
+                return;
             }
 
             var linkedPages = doc.DocumentNode.Descendants("a")
-                .Select(a => a.GetAttributeValue("href", null))
+                .Select(hrefNode => hrefNode.GetAttributeValue("href", null))
                 .Union(doc.DocumentNode.Descendants("img")
-                        .Select(a => a.GetAttributeValue("src", null)))
-                .Where(u => !string.IsNullOrEmpty(u) && url.Contains(WebRequest.Create(_primaryUrl).RequestUri.Host) && !_urls.Contains(u)).Distinct()
+                    .Select(imgNode => imgNode.GetAttributeValue("src", null)))
+                .Select(node =>
+                    { if (node != null && node.StartsWith('/')) node = _primaryUrl + node[1..]; return node; })
+                .Where(node => !string.IsNullOrEmpty(node) && node.Contains(WebRequest.Create(_primaryUrl).RequestUri.Host) && !Urls.Contains(node)).Distinct()
                 .ToList();
 
-            //117
+            Urls.AddRange(linkedPages.ToList());
 
-            _urls.AddRange(linkedPages.ToList());
-
-            foreach (var item in linkedPages)
-            {
-                PrintUrl?.Invoke(item);
-                GetUrls(item);
-            }
-
-            _urls = _urls.Select(l =>
-                { if (l.StartsWith('/'))  l = _primaryUrl + l[1..]; return l; }).ToList();
-
-            return _urls;
+            Parallel.ForEach(linkedPages, IterateUrls);
         }
 
         public static async Task<List<string>> GetUrlsAsync(string url)

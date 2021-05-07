@@ -1,45 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace UKAD_Proj
 {
     class ResponseMeter
     {
+        private static Dictionary<string, int> urlTimings = new Dictionary<string, int>();
+
         public static Dictionary<string, int> GetUrlsTimings(List<string> urls)
         {
-            HttpWebRequest request;
-            Stopwatch timer = new Stopwatch();
-            Dictionary<string, int> urlTimings = new Dictionary<string, int>();
-
-            foreach (var item in urls)
-            {
-                
-                timer.Reset();
-                timer.Start();
-
-                try
-                {
-                    request = (HttpWebRequest)WebRequest.Create(item);
-                    HttpWebResponse response = (HttpWebResponse)request.GetResponse(); //EXCEPTION!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                    response.Close();
-                    timer.Stop();
-                    urlTimings.Add(item, (int) timer.ElapsedMilliseconds);
-                }
-                catch
-                {
-                    continue;
-                }
-
-                timer.Stop();
-            }
+            Parallel.ForEach(urls, GetTiming);
 
             return urlTimings.OrderBy(u => u.Value)
                 .ToDictionary(u => u.Key, u => u.Value);
+        }
+
+        private static void GetTiming(string url)
+        {
+            Stopwatch timer = new Stopwatch();
+            HttpWebRequest request;
+            timer.Start();
+
+            try
+            {
+                request = (HttpWebRequest)WebRequest.Create(url);
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                response.Close();
+                timer.Stop();
+                urlTimings.Add(url, (int)timer.ElapsedMilliseconds);
+            }
+            catch
+            {
+                return;
+            }
+
+            timer.Stop();
         }
     }
 }
